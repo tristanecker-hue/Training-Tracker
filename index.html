@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#1E1C1A;
+    --surface:#28251F;
+    --surface-2:#332F27;
+    --surface-3:#3D382E;
+    --line: rgba(245,241,234,0.09);
+    --text:#F5F1EA;
+    --text-dim:#A69C8E;
+    --text-faint:#7A7367;
+    --white-plate:#C9C2B8;
+    --green:#4F8A5B;
+    --yellow:#E0A72E;
+    --blue:#3B7EA1;
+    --red:#D64545;
+    --danger:#C24545;
+    --radius:14px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #322D26 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y: none;
+  }
+  h1,h2,h3, .display{
+    font-family:'Oswald', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    margin:0;
+  }
+  .tabular{ font-variant-numeric: tabular-nums; }
+  #app{
+    max-width:560px;
+    margin:0 auto;
+    min-height:100%;
+    padding-bottom: calc(96px + var(--safe-bottom));
+    position:relative;
+  }
+
+  /* Top bar */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    padding: calc(18px + var(--safe-top)) 20px 14px;
+    display:flex; align-items:center; justify-content:space-between;
+    background: linear-gradient(180deg, var(--bg) 60%, rgba(30,28,26,0.85) 85%, transparent);
+  }
+  .topbar-left{display:flex; align-items:center; gap:10px; min-width:0;}
+  .iconbtn{
+    width:40px; height:40px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface); border:1px solid var(--line);
+    color:var(--text); flex:none;
+    cursor:pointer;
+  }
+  .iconbtn:active{ background:var(--surface-2); }
+  .titleblock{ min-width:0; }
+  .titleblock h1{ font-size:26px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .titleblock .sub{ font-size:12.5px; color:var(--text-dim); margin-top:2px; letter-spacing:0.02em;}
+  .eyebrow{
+    font-family:'Oswald', sans-serif; text-transform:uppercase; letter-spacing:0.14em;
+    font-size:11px; color:var(--text-faint); font-weight:500;
+  }
+
+  main{ padding: 6px 20px 0; }
+  .empty{
+    margin-top:40px; padding:36px 22px; text-align:center;
+    border:1px dashed var(--line); border-radius:var(--radius);
+    color:var(--text-dim);
+  }
+  .empty .display{font-size:20px; color:var(--text); margin-bottom:6px;}
+  .empty p{ font-size:13.5px; line-height:1.5; margin:0 0 16px; }
+
+  /* Kacheln */
+  .tile-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:2px; }
+  .cat-tile, .ger-tile{
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:16px; min-height:126px; display:flex; flex-direction:column; justify-content:space-between;
+    cursor:pointer; position:relative; overflow:hidden;
+  }
+  .cat-tile::before, .ger-tile::before{
+    content:''; position:absolute; top:-32px; right:-32px; width:92px; height:92px;
+    border-radius:50%; background:var(--accent); opacity:0.22;
+  }
+  .cat-tile:active, .ger-tile:active{ background:var(--surface-2); }
+  .tile-dot{ width:14px; height:14px; border-radius:50%; background:var(--accent); flex:none; }
+  .cat-tile h2{ font-size:19px; line-height:1.15; }
+  .cat-tile .meta{ font-size:12px; color:var(--text-dim); margin-top:5px; }
+  .ger-tile h3{ font-size:15.5px; margin-bottom:5px; line-height:1.2; }
+  .ger-tile-photo{ width:38px; height:38px; border-radius:10px; object-fit:cover; flex:none; }
+  .ger-tile .val{ font-family:'Oswald'; font-size:20px; font-weight:600; }
+  .ger-tile .lbl{ font-size:11px; color:var(--text-faint); }
+  .ger-tile .trend{ margin-top:2px; }
+
+  /* Category cards */
+  .cat-card{
+    display:flex; align-items:center; gap:14px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left: 5px solid var(--accent, var(--red));
+    border-radius:var(--radius);
+    padding:16px 16px;
+    margin-bottom:12px;
+    cursor:pointer;
+  }
+  .cat-card:active{ background:var(--surface-2); }
+  .cat-card .info{ flex:1; min-width:0; }
+  .cat-card h2{ font-size:20px; }
+  .cat-card .meta{ font-size:12.5px; color:var(--text-dim); margin-top:3px; }
+  .cat-card .chev{ color:var(--text-faint); flex:none; }
+
+  /* Geraet cards */
+  .ger-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 16px 14px;
+    margin-bottom:12px;
+  }
+  .ger-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; cursor:pointer; }
+  .ger-head h3{ font-size:18px; }
+  .ger-latest{ text-align:right; flex:none; }
+  .ger-latest .val{ font-family:'Oswald'; font-size:22px; font-weight:600; }
+  .ger-latest .lbl{ font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.08em; }
+  .tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .tag{
+    font-size:11.5px; color:var(--text-dim); background:var(--surface-2);
+    border:1px solid var(--line); padding:3px 9px; border-radius:100px;
+  }
+  .trend{ font-size:11.5px; margin-top:2px; }
+  .trend.up{ color:#7BBE8E; }
+  .trend.flat{ color:var(--text-faint); }
+
+  /* Plate chart */
+  .plate-chart{ margin-top:14px; }
+  .plate-svg-wrap{ width:100%; overflow-x:auto; padding-bottom:2px; }
+
+  /* Entry list */
+  .entry-list{ margin-top:6px; }
+  .entry-row{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 2px; border-top:1px solid var(--line);
+  }
+  .entry-row:first-child{ border-top:none; }
+  .entry-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .entry-date{ font-size:12.5px; color:var(--text-dim); width:52px; flex:none; }
+  .entry-weight{ font-family:'Oswald'; font-size:16px; font-weight:600; flex:1; }
+  .entry-note{ font-size:11.5px; color:var(--text-faint); }
+  .entry-del{ color:var(--text-faint); background:none; border:none; padding:6px; cursor:pointer; }
+  .entry-del:active{ color:var(--danger); }
+
+  .section-label{
+    font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.1em;
+    font-size:12px; color:var(--text-faint); margin: 22px 2px 10px;
+  }
+
+  /* Settings (Sitz/Lehne) editor */
+  .settings-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .setting-chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface-2); border:1px solid var(--line);
+    border-radius:100px; padding:6px 8px 6px 12px; font-size:13px;
+  }
+  .setting-chip button{ background:none; border:none; color:var(--text-faint); padding:2px; cursor:pointer; }
+  .add-chip{
+    display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim);
+    border:1px dashed var(--line); border-radius:100px; padding:6px 14px; cursor:pointer; background:none;
+  }
+
+  /* FAB */
+  .fab{
+    position:fixed; right:20px; bottom: calc(24px + var(--safe-bottom));
+    width:58px; height:58px; border-radius:50%;
+    background: linear-gradient(155deg, #E9B23B, #D64545);
+    color:#1E1C1A; border:none;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 8px 22px rgba(214,69,69,0.35), 0 2px 6px rgba(0,0,0,0.3);
+    font-size:28px; cursor:pointer; z-index:30;
+    max-width:560px;
+  }
+  .fab:active{ transform: scale(0.94); }
+
+  /* Sheet / modal */
+  .scrim{
+    position:fixed; inset:0; background:rgba(10,9,8,0.6);
+    z-index:40; display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition: opacity .18s ease;
+  }
+  .scrim.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    background:var(--surface); width:100%; max-width:560px;
+    border-radius:20px 20px 0 0; padding:10px 20px calc(24px + var(--safe-bottom));
+    transform: translateY(100%); transition: transform .22s cubic-bezier(.32,.72,0,1);
+    max-height: 86vh; overflow-y:auto;
+    border-top:1px solid var(--line);
+  }
+  .scrim.open .sheet{ transform: translateY(0); }
+  .sheet-handle{ width:36px; height:4px; background:var(--surface-3); border-radius:4px; margin: 8px auto 14px; }
+  .sheet h2{ font-size:20px; margin-bottom:16px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--surface-2); border:1px solid var(--line);
+    color:var(--text); border-radius:10px; padding:12px 12px; font-size:16px;
+    font-family:'Inter'; -webkit-appearance:none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:2px solid var(--yellow); outline-offset:1px; }
+  .color-row{ display:flex; gap:10px; margin-top:4px; }
+  .swatch{ width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
+  .swatch.selected{ border-color:var(--text); }
+  .btn-row{ display:flex; gap:10px; margin-top:6px; }
+  .btn{
+    flex:1; padding:14px; border-radius:12px; border:none; font-size:15px; font-weight:600;
+    font-family:'Inter'; cursor:pointer;
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn-primary{ background:var(--yellow); color:#241D0E; }
+  .btn-ghost{ background:var(--surface-2); color:var(--text); border:1px solid var(--line); }
+  .btn-danger-text{ background:none; color:var(--danger); border:none; font-size:14px; padding:10px; width:100%; text-align:center; cursor:pointer; }
+
+  .menu-item{
+    display:flex; align-items:center; gap:12px; padding:14px 4px;
+    border-top:1px solid var(--line); font-size:15px; cursor:pointer;
+  }
+  .menu-item:first-child{ border-top:none; }
+  .menu-item .mi-title{ font-weight:600; }
+  .menu-item .mi-sub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .menu-icon{ width:34px; height:34px; border-radius:9px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; flex:none; }
+
+  .info-box{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:12px;
+    padding:14px; font-size:13px; color:var(--text-dim); line-height:1.55; margin-top:6px;
+  }
+  .info-box b{ color:var(--text); }
+
+  input[type=file]{ display:none; }
+
+  ::-webkit-scrollbar{ width:0; height:0; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<input type="file" id="importInput" accept="application/json">
+
+<script>
+/* ---------- Daten ---------- */
+const STORAGE_KEY = 'trainingsTrackerData_v1';
+const PLATE_COLORS = ['white-plate','green','yellow','blue','red'];
+const PLATE_HEX = {
+  'white-plate':'#C9C2B8','green':'#4F8A5B','yellow':'#E0A72E','blue':'#3B7EA1','red':'#D64545'
+};
+const CAT_COLORS = ['red','blue','yellow','green','white-plate'];
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function seedData(){
+  return {
+    categories: [
+      { id: uid(), name:'Bizeps', color:'red', geraete: [
+        { id: uid(), name:'Gerät 66', settings:[], entries:[
+          {id:uid(), date:'2026-02', weight:14, note:''},
+          {id:uid(), date:'2026-04', weight:18, note:''},
+          {id:uid(), date:'2026-06', weight:23, note:''},
+        ]},
+      ]},
+      { id: uid(), name:'Bauch', color:'blue', geraete: [
+        { id: uid(), name:'Gerät 5', settings:[{k:'Sitz',v:'4'},{k:'Lehne',v:'2'}], entries:[
+          {id:uid(), date:'2026-02', weight:30, note:''},
+          {id:uid(), date:'2026-05', weight:35, note:''},
+        ]},
+      ]},
+      { id: uid(), name:'Brust', color:'yellow', geraete: [
+        { id: uid(), name:'Gerät 10', settings:[{k:'Sitz',v:'4'}], entries:[
+          {id:uid(), date:'2026-02', weight:25, note:''},
+        ]},
+        { id: uid(), name:'Gerät 8', settings:[{k:'Sitz',v:'4'}], entries:[
+          {id:uid(), date:'2026-02', weight:10, note:''},
+          {id:uid(), date:'2026-04', weight:25, note:''},
+          {id:uid(), date:'2026-05', weight:35, note:''},
+          {id:uid(), date:'2026-06', weight:40, note:''},
+        ]},
+      ]},
+    ]
+  };
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return seedData();
+    return JSON.parse(raw);
+  }catch(e){ return seedData(); }
+}
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+}
+
+const MOTIVATION_QUOTES = [
+  'Der Schmerz von heute ist die Stärke von morgen.',
+  'Du musst nicht großartig sein um anzufangen, aber anfangen um großartig zu werden.',
+  'Kleine Fortschritte, jede Woche – das ist die ganze Formel.',
+  'Dein Körper kann fast alles. Es ist dein Kopf, den du überzeugen musst.',
+  'Disziplin schlägt Motivation – jedes Mal.',
+  'Der einzige schlechte Trainingstag ist der, an dem du nicht hingehst.',
+  'Fortschritt fühlt sich langsam an und ist trotzdem Fortschritt.',
+  'Zeig dich. Der Rest kommt von selbst.',
+];
+
+/* ---------- App-Status ---------- */
+const state = {
+  data: loadData(),
+  view: { name:'start', catId:null, gerId:null },
+  search: { open:false, query:'' },
+};
+
+function go(name, catId=null, gerId=null){
+  state.view = { name, catId, gerId };
+  render();
+  window.scrollTo(0,0);
+}
+
+/* ---------- Helpers ---------- */
+function findCat(id){ return state.data.categories.find(c=>c.id===id); }
+function findGer(cat, id){ return cat.geraete.find(g=>g.id===id); }
+function sortedEntries(ger){ return [...ger.entries].sort((a,b)=> a.date.localeCompare(b.date)); }
+function fmtDate(d){ // 2026-02 -> 02/26
+  const [y,m] = d.split('-'); return `${m}/${y.slice(2)}`;
+}
+function latestEntry(ger){
+  const e = sortedEntries(ger); return e.length? e[e.length-1] : null;
+}
+function plateColorForRatio(t){ // t 0..1
+  const idx = Math.min(PLATE_COLORS.length-1, Math.floor(t * PLATE_COLORS.length));
+  return PLATE_COLORS[idx];
+}
+
+/* ---------- Render: Root ---------- */
+function render(){
+  const app = document.getElementById('app');
+  if(state.view.name === 'start') app.innerHTML = renderStart();
+  else if(state.view.name === 'home') app.innerHTML = renderHome();
+  else if(state.view.name === 'cat') app.innerHTML = renderCategory();
+  else if(state.view.name === 'ger') app.innerHTML = renderGeraet();
+  attachGlobalHandlers();
+  if(state.view.name === 'ger') drawPlateChart();
+}
+
+/* ---------- Start-Screen ---------- */
+function renderStart(){
+  const quote = MOTIVATION_QUOTES[Math.floor(Math.random()*MOTIVATION_QUOTES.length)];
+  return `
+    <div style="min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:32px 30px; text-align:center;">
+      <div class="eyebrow" style="margin-bottom:10px;">Trainings-Log</div>
+      <h1 style="font-size:42px; margin-bottom:28px;">Training</h1>
+      <div style="font-family:'Oswald'; font-size:17px; line-height:1.45; color:var(--text-dim); max-width:300px; margin-bottom:44px; font-style:italic;">
+        „${escapeHtml(quote)}"
+      </div>
+      <button id="startTrainingBtn" class="btn btn-primary" style="padding:18px 44px; font-size:17px; border-radius:100px; flex:none;">Training starten</button>
+    </div>
+  `;
+}
+
+/* ---------- Home ---------- */
+function renderHome(){
+  const cats = state.data.categories;
+  const totalGer = cats.reduce((s,c)=>s+c.geraete.length,0);
+  const searchOpen = state.search.open;
+  return `
+    <div class="topbar">
+      <div class="titleblock">
+        <div class="eyebrow">Trainings-Log</div>
+        <h1>Training</h1>
+        <div class="sub">${cats.length} Kategorien · ${totalGer} Geräte</div>
+      </div>
+      <div class="topbar-left">
+        <button class="iconbtn" id="searchBtn" aria-label="Gerät suchen">${iconSearch()}</button>
+        <button class="iconbtn" id="menuBtn" aria-label="Menü">${iconMenu()}</button>
+      </div>
+    </div>
+    ${searchOpen ? `
+      <main style="padding-top:0;">
+        <div style="display:flex; gap:8px; align-items:center; margin: 4px 2px 6px;">
+          <input type="text" id="searchInput" class="tabular" placeholder="Gerätenummer oder Name, z. B. 66"
+            value="${escapeHtml(state.search.query)}"
+            style="width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:12px 12px; font-size:16px; font-family:'Inter';"
+            inputmode="numeric">
+          <button class="iconbtn" id="searchCloseBtn" aria-label="Suche schließen">${iconX()}</button>
+        </div>
+        <div id="searchResults">${renderSearchResults(state.search.query)}</div>
+      </main>
+    ` : `
+      <main>
+        ${cats.length===0 ? `
+          <div class="empty">
+            <div class="display">Noch leer</div>
+            <p>Leg deine erste Kategorie an, z. B. Bizeps, Bauch oder Brust.</p>
+          </div>
+        ` : `<div class="tile-grid">${cats.map(c=>renderCatTile(c)).join('')}</div>`}
+      </main>
+    `}
+    ${fabHtml('+')}
+    ${sheetContainer()}
+  `;
+}
+
+function searchGeraete(query){
+  const q = query.trim().toLowerCase();
+  const results = [];
+  state.data.categories.forEach(cat=>{
+    cat.geraete.forEach(g=>{
+      if(!q || g.name.toLowerCase().includes(q)){
+        results.push({ cat, g });
+      }
+    });
+  });
+  return results;
+}
+
+function renderSearchResults(query){
+  const results = searchGeraete(query);
+  if(query.trim() && results.length===0){
+    return `<div class="empty"><div class="display">Nichts gefunden</div><p>Kein Gerät mit "${escapeHtml(query)}" im Namen.</p></div>`;
+  }
+  return results.map(({cat,g})=>{
+    const latest = latestEntry(g);
+    return `
+      <div class="ger-card" data-search-cat="${cat.id}" data-search-ger="${g.id}" style="cursor:pointer;">
+        <div class="ger-head">
+          <div>
+            <div class="eyebrow" style="margin-bottom:2px;">${escapeHtml(cat.name)}</div>
+            <h3>${escapeHtml(g.name)}</h3>
+          </div>
+          <div class="ger-latest">
+            ${latest ? `<div class="val tabular">${latest.weight}<span style="font-size:13px;">kg</span></div><div class="lbl">${fmtDate(latest.date)}</div>` : `<div class="lbl">Keine Daten</div>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCatTile(c){
+  const gerCount = c.geraete.length;
+  const latest = c.geraete.map(g=>latestEntry(g)).filter(Boolean);
+  const metaText = gerCount===0 ? 'Noch keine Geräte' : `${gerCount} Gerät${gerCount>1?'e':''}`;
+  return `
+    <div class="cat-tile" style="--accent:${PLATE_HEX[c.color]||PLATE_HEX.red}" data-cat="${c.id}">
+      <div class="tile-dot"></div>
+      <div>
+        <h2>${escapeHtml(c.name)}</h2>
+        <div class="meta">${metaText}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Kategorie-Ansicht ---------- */
+function renderCategory(){
+  const cat = findCat(state.view.catId);
+  if(!cat) { go('home'); return ''; }
+  return `
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="iconbtn" id="backBtn" aria-label="Zurück">${iconBack()}</button>
+        <div class="titleblock">
+          <div class="eyebrow">Kategorie</div>
+          <h1>${escapeHtml(cat.name)}</h1>
+        </div>
+      </div>
+      <button class="iconbtn" id="editCatBtn" aria-label="Bearbeiten">${iconEdit()}</button>
+    </div>
+    <main>
+      ${cat.geraete.length===0 ? `
+        <div class="empty">
+          <div class="display">Keine Geräte</div>
+          <p>Füge das erste Gerät für ${escapeHtml(cat.name)} hinzu.</p>
+        </div>
+      ` : `<div class="tile-grid">${cat.geraete.map(g=>renderGerTile(cat,g)).join('')}</div>`}
+    </main>
+    ${fabHtml('+')}
+    ${sheetContainer()}
+  `;
+}
+
+function renderGerTile(cat, g){
+  const entries = sortedEntries(g);
+  const latest = entries[entries.length-1];
+  const prev = entries.length>1 ? entries[entries.length-2] : null;
+  let trendHtml = '';
+  if(latest && prev){
+    const diff = latest.weight - prev.weight;
+    if(diff>0) trendHtml = `<div class="trend up">▲ +${diff}kg</div>`;
+    else if(diff<0) trendHtml = `<div class="trend up" style="color:#C98E5A">▼ ${diff}kg</div>`;
+    else trendHtml = `<div class="trend flat">— gleich</div>`;
+  }
+  return `
+    <div class="ger-tile" style="--accent:${PLATE_HEX[cat.color]||PLATE_HEX.red}" data-ger="${g.id}" data-cat="${cat.id}">
+      ${g.photo ? `<img src="${g.photo}" class="ger-tile-photo">` : `<div class="tile-dot"></div>`}
+      <div>
+        <h3>${escapeHtml(g.name)}</h3>
+        ${latest ? `<div class="val tabular">${latest.weight}<span style="font-size:12px;">kg</span></div>` : `<div class="lbl">Keine Daten</div>`}
+        ${trendHtml}
+      </div>
+    </div>
+  `;
+}
+
+function renderGerCard(cat, g){
+  const entries = sortedEntries(g);
+  const latest = entries[entries.length-1];
+  const prev = entries.length>1 ? entries[entries.length-2] : null;
+  let trendHtml = '';
+  if(latest && prev){
+    const diff = latest.weight - prev.weight;
+    if(diff>0) trendHtml = `<div class="trend up">▲ +${diff}kg seit ${fmtDate(prev.date)}</div>`;
+    else if(diff<0) trendHtml = `<div class="trend up" style="color:#C98E5A">▼ ${diff}kg seit ${fmtDate(prev.date)}</div>`;
+    else trendHtml = `<div class="trend flat">— unverändert</div>`;
+  }
+  return `
+    <div class="ger-card">
+      <div class="ger-head" data-ger="${g.id}" data-cat="${cat.id}">
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${g.photo ? `<img src="${g.photo}" style="width:44px; height:44px; border-radius:10px; object-fit:cover; flex:none;">` : ''}
+          <div>
+            <h3>${escapeHtml(g.name)}</h3>
+            ${trendHtml}
+          </div>
+        </div>
+        <div class="ger-latest">
+          ${latest ? `<div class="val tabular">${latest.weight}<span style="font-size:13px;">kg</span></div><div class="lbl">${fmtDate(latest.date)}</div>` : `<div class="lbl">Keine Daten</div>`}
+        </div>
+      </div>
+      ${g.settings && g.settings.length ? `<div class="tags">${g.settings.map(s=>`<span class="tag">${escapeHtml(s.k)} ${escapeHtml(s.v)}</span>`).join('')}</div>` : ''}
+    </div>
+  `;
+}
+
+/* ---------- Gerät-Detail ---------- */
+function renderGeraet(){
+  const cat = findCat(state.view.catId);
+  if(!cat){ go('home'); return ''; }
+  const g = findGer(cat, state.view.gerId);
+  if(!g){ go('cat', cat.id); return ''; }
+  const entries = sortedEntries(g);
+  const latest = entries[entries.length-1];
+  const maxW = entries.length? Math.max(...entries.map(e=>e.weight)) : 0;
+
+  return `
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="iconbtn" id="backBtn" aria-label="Zurück">${iconBack()}</button>
+        <div class="titleblock">
+          <div class="eyebrow">${escapeHtml(cat.name)}</div>
+          <h1>${escapeHtml(g.name)}</h1>
+        </div>
+      </div>
+      <button class="iconbtn" id="editGerBtn" aria-label="Bearbeiten">${iconEdit()}</button>
+    </div>
+    <main>
+      ${g.photo ? `<img src="${g.photo}" style="width:100%; max-height:220px; object-fit:cover; border-radius:var(--radius); margin-top:6px; display:block;">` : ''}
+      ${latest ? `
+        <div style="display:flex; align-items:baseline; gap:10px; margin:6px 2px 0;">
+          <div class="display tabular" style="font-size:44px; font-weight:600;">${latest.weight}<span style="font-size:20px;"> kg</span></div>
+          <div style="color:var(--text-dim); font-size:13px;">Stand ${fmtDate(latest.date)}</div>
+        </div>
+      ` : `<div class="empty"><div class="display">Noch keine Einträge</div><p>Füge deinen ersten Trainingswert hinzu.</p></div>`}
+
+      ${entries.length ? `
+        <div class="plate-chart">
+          <div class="plate-svg-wrap"><svg id="plateSvg" height="86"></svg></div>
+        </div>
+      ` : ''}
+
+      <div class="section-label">Einstellungen</div>
+      <div class="settings-list" id="settingsList">
+        ${(g.settings||[]).map(s=>`
+          <div class="setting-chip">${escapeHtml(s.k)}: ${escapeHtml(s.v)}<button data-delset="${s.k}">${iconX()}</button></div>
+        `).join('')}
+        <button class="add-chip" id="addSettingBtn">+ Einstellung</button>
+      </div>
+
+      <div class="section-label">Verlauf</div>
+      <div class="entry-list">
+        ${entries.length===0 ? `<div style="color:var(--text-faint); font-size:13px; padding:8px 2px;">Noch keine Einträge.</div>` :
+          [...entries].reverse().map(e=>{
+            const t = maxW>0 ? e.weight/maxW : 0;
+            const color = plateColorForRatio(t*0.999);
+            return `
+            <div class="entry-row">
+              <div class="entry-dot" style="background:${PLATE_HEX[color]}"></div>
+              <div class="entry-date tabular">${fmtDate(e.date)}</div>
+              <div class="entry-weight tabular">${e.weight} kg ${e.note? `<span class="entry-note"> · ${escapeHtml(e.note)}</span>`:''}</div>
+              <button class="entry-del" data-delentry="${e.id}">${iconTrash()}</button>
+            </div>`;
+          }).join('')
+        }
+      </div>
+    </main>
+    ${fabHtml('+')}
+    ${sheetContainer()}
+  `;
+}
+
+function drawPlateChart(){
+  const cat = findCat(state.view.catId);
+  const g = cat && findGer(cat, state.view.gerId);
+  if(!g) return;
+  const svg = document.getElementById('plateSvg');
+  if(!svg) return;
+  const entries = sortedEntries(g);
+  if(entries.length===0) return;
+  const minGap = 66;
+  const padX = 30;
+  const width = Math.max(svg.parentElement.clientWidth, padX*2 + (entries.length-1)*minGap + 40);
+  svg.setAttribute('width', width);
+  svg.setAttribute('viewBox', `0 0 ${width} 86`);
+  const maxW = Math.max(...entries.map(e=>e.weight));
+  const minW = Math.min(...entries.map(e=>e.weight));
+  const y = 46;
+  const usableW = width - padX*2;
+  const step = entries.length>1 ? usableW/(entries.length-1) : 0;
+
+  let svgContent = `<line x1="${padX}" y1="${y}" x2="${width-padX}" y2="${y}" stroke="${PLATE_HEX['white-plate']}" stroke-width="3" stroke-linecap="round" opacity="0.35"/>`;
+
+  entries.forEach((e,i)=>{
+    const x = padX + step*i;
+    const t = maxW>minW ? (e.weight-minW)/(maxW-minW) : 1;
+    const r = 10 + t*12;
+    const color = plateColorForRatio(Math.min(t*0.999,0.999));
+    const isPR = e.weight === maxW;
+    svgContent += `<circle cx="${x}" cy="${y}" r="${r}" fill="${PLATE_HEX[color]}" stroke="#1E1C1A" stroke-width="2"/>`;
+    if(isPR){
+      svgContent += `<text x="${x}" y="${y - r - 8}" text-anchor="middle" fill="#E0A72E" font-size="11" font-family="Oswald" font-weight="600">PR</text>`;
+    }
+    svgContent += `<text x="${x}" y="${y + r + 16}" text-anchor="middle" fill="#A69C8E" font-size="10.5" font-family="Inter">${fmtDate(e.date)}</text>`;
+  });
+  svg.innerHTML = svgContent;
+}
+
+/* ---------- FAB / Sheets ---------- */
+function fabHtml(symbol){
+  return `<button class="fab" id="fabBtn" aria-label="Hinzufügen">${symbol}</button>`;
+}
+function sheetContainer(){
+  return `<div class="scrim" id="scrim"><div class="sheet" id="sheetBody"></div></div>`;
+}
+function openSheet(html){
+  const scrim = document.getElementById('scrim');
+  document.getElementById('sheetBody').innerHTML = `<div class="sheet-handle"></div>` + html;
+  scrim.classList.add('open');
+}
+function closeSheet(){
+  const scrim = document.getElementById('scrim');
+  if(scrim) scrim.classList.remove('open');
+}
+
+/* ---------- Icons (inline SVG, stroke=currentColor) ---------- */
+function iconChevron(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>`; }
+function iconBack(){ return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`; }
+function iconMenu(){ return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>`; }
+function iconSearch(){ return `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`; }
+function iconEdit(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`; }
+function iconX(){ return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`; }
+function iconTrash(){ return `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>`; }
+function iconUpload(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg>`; }
+function iconDownload(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V8"/><path d="M7 13l5 5 5-5"/><path d="M5 21h14"/></svg>`; }
+function iconPdf(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>`; }
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function attachSearchResultHandlers(){
+  document.querySelectorAll('[data-search-ger]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.search.open = false; state.search.query='';
+      go('ger', el.dataset.searchCat, el.dataset.searchGer);
+    });
+  });
+}
+
+/* ---------- Sheets: Formulare ---------- */
+function openAddCategorySheet(){
+  openSheet(`
+    <h2>Neue Kategorie</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f_catName" placeholder="z. B. Rücken" autofocus>
+    </div>
+    <div class="field">
+      <label>Farbe</label>
+      <div class="color-row" id="colorRow">
+        ${CAT_COLORS.map((c,i)=>`<div class="swatch ${i===0?'selected':''}" data-color="${c}" style="background:${PLATE_HEX[c]}"></div>`).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelBtn">Abbrechen</button>
+      <button class="btn btn-primary" id="saveCatBtn">Speichern</button>
+    </div>
+  `);
+  let selectedColor = CAT_COLORS[0];
+  document.querySelectorAll('#colorRow .swatch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      document.querySelectorAll('#colorRow .swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+      selectedColor = sw.dataset.color;
+    });
+  });
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  document.getElementById('saveCatBtn').onclick = ()=>{
+    const name = document.getElementById('f_catName').value.trim();
+    if(!name) return;
+    state.data.categories.push({ id: uid(), name, color: selectedColor, geraete: [] });
+    saveData(); closeSheet(); render();
+  };
+}
+
+function openEditCategorySheet(cat){
+  openSheet(`
+    <h2>Kategorie bearbeiten</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f_catName" value="${escapeHtml(cat.name)}">
+    </div>
+    <div class="field">
+      <label>Farbe</label>
+      <div class="color-row" id="colorRow">
+        ${CAT_COLORS.map(c=>`<div class="swatch ${c===cat.color?'selected':''}" data-color="${c}" style="background:${PLATE_HEX[c]}"></div>`).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelBtn">Abbrechen</button>
+      <button class="btn btn-primary" id="saveCatBtn">Speichern</button>
+    </div>
+    <button class="btn-danger-text" id="delCatBtn">Kategorie löschen</button>
+  `);
+  let selectedColor = cat.color;
+  document.querySelectorAll('#colorRow .swatch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      document.querySelectorAll('#colorRow .swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected'); selectedColor = sw.dataset.color;
+    });
+  });
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  document.getElementById('saveCatBtn').onclick = ()=>{
+    const name = document.getElementById('f_catName').value.trim();
+    if(!name) return;
+    cat.name = name; cat.color = selectedColor;
+    saveData(); closeSheet(); render();
+  };
+  document.getElementById('delCatBtn').onclick = ()=>{
+    if(confirm(`"${cat.name}" inkl. aller Geräte löschen?`)){
+      state.data.categories = state.data.categories.filter(c=>c.id!==cat.id);
+      saveData(); closeSheet(); go('home');
+    }
+  };
+}
+
+function openAddGeraetSheet(cat){
+  openSheet(`
+    <h2>Neues Gerät</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f_gerName" placeholder="z. B. Gerät 12" autofocus>
+    </div>
+    <div class="field">
+      <label>Startwert (kg) — optional</label>
+      <input type="number" id="f_gerWeight" step="0.5" placeholder="z. B. 20">
+    </div>
+    <div class="field">
+      <label>Monat/Jahr</label>
+      <input type="month" id="f_gerDate" value="${currentMonthValue()}">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelBtn">Abbrechen</button>
+      <button class="btn btn-primary" id="saveGerBtn">Speichern</button>
+    </div>
+  `);
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  document.getElementById('saveGerBtn').onclick = ()=>{
+    const name = document.getElementById('f_gerName').value.trim();
+    if(!name) return;
+    const w = parseFloat(document.getElementById('f_gerWeight').value);
+    const d = document.getElementById('f_gerDate').value || currentMonthValue();
+    const ger = { id: uid(), name, settings:[], entries: [] };
+    if(!isNaN(w)) ger.entries.push({ id: uid(), date: d, weight: w, note:'' });
+    cat.geraete.push(ger);
+    saveData(); closeSheet(); render();
+  };
+}
+
+function openEditGeraetSheet(cat, g){
+  openSheet(`
+    <h2>Gerät bearbeiten</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f_gerName" value="${escapeHtml(g.name)}">
+    </div>
+    <div class="field">
+      <label>Foto</label>
+      ${g.photo ? `
+        <img src="${g.photo}" style="width:100%; max-height:160px; object-fit:cover; border-radius:10px; margin-bottom:8px; display:block;">
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="changePhotoBtn">Foto ändern</button>
+          <button class="btn btn-ghost" id="removePhotoBtn" style="color:var(--danger);">Entfernen</button>
+        </div>
+      ` : `
+        <button class="btn btn-ghost" id="changePhotoBtn" style="width:100%;">📷 Foto hinzufügen</button>
+      `}
+      <input type="file" id="f_gerPhoto" accept="image/*" capture="environment" style="display:none;">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelBtn">Abbrechen</button>
+      <button class="btn btn-primary" id="saveGerBtn">Speichern</button>
+    </div>
+    <button class="btn-danger-text" id="delGerBtn">Gerät löschen</button>
+  `);
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  document.getElementById('changePhotoBtn').onclick = ()=> document.getElementById('f_gerPhoto').click();
+  const removeBtn = document.getElementById('removePhotoBtn');
+  if(removeBtn) removeBtn.onclick = ()=>{ g.photo = null; saveData(); closeSheet(); render(); };
+  document.getElementById('f_gerPhoto').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const dataUrl = await resizeImageFile(file, 700, 0.72);
+      g.photo = dataUrl;
+      saveData(); closeSheet(); render();
+    }catch(err){
+      alert('Foto konnte nicht geladen werden.');
+    }
+  });
+  document.getElementById('saveGerBtn').onclick = ()=>{
+    const name = document.getElementById('f_gerName').value.trim();
+    if(!name) return;
+    g.name = name; saveData(); closeSheet(); render();
+  };
+  document.getElementById('delGerBtn').onclick = ()=>{
+    if(confirm(`"${g.name}" löschen?`)){
+      cat.geraete = cat.geraete.filter(x=>x.id!==g.id);
+      saveData(); closeSheet(); go('cat', cat.id);
+    }
+  };
+}
+
+function resizeImageFile(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > height && width > maxDim){ height = Math.round(height * maxDim/width); width = maxDim; }
+        else if(height > maxDim){ width = Math.round(width * maxDim/height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function openAddEntrySheet(cat, g){
+  openSheet(`
+    <h2>Neuer Eintrag</h2>
+    <div class="field">
+      <label>Monat/Jahr</label>
+      <input type="month" id="f_entryDate" value="${currentMonthValue()}">
+    </div>
+    <div class="field">
+      <label>Gewicht (kg)</label>
+      <input type="number" id="f_entryWeight" step="0.5" placeholder="z. B. 25" autofocus>
+    </div>
+    <div class="field">
+      <label>Notiz — optional</label>
+      <input type="text" id="f_entryNote" placeholder="z. B. sauber durchgezogen">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelBtn">Abbrechen</button>
+      <button class="btn btn-primary" id="saveEntryBtn">Speichern</button>
+    </div>
+  `);
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  document.getElementById('saveEntryBtn').onclick = ()=>{
+    const w = parseFloat(document.getElementById('f_entryWeight').value);
+    if(isNaN(w)) return;
+    const d = document.getElementById('f_entryDate').value || currentMonthValue();
+    const note = document.getElementById('f_entryNote').value.trim();
+    g.entries.push({ id: uid(), date: d, weight: w, note });
+    saveData(); closeSheet(); render();
+  };
+}
+
+function openAddSettingSheet(g){
+  openSheet(`
+    <h2>Einstellung hinzufügen</h2>
+    <div class="field">
+      <label>Bezeichnung</label>
+      <input type="text" id="f_setKey" placeholder="z. B. Sitz" autofocus>
+    </div>
+    <div class="field">
+      <label>Wert</label>
+      <input type="text" id="f_setVal" placeholder="z. B. 4">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelBtn">Abbrechen</button>
+      <button class="btn btn-primary" id="saveSetBtn">Speichern</button>
+    </div>
+  `);
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  document.getElementById('saveSetBtn').onclick = ()=>{
+    const k = document.getElementById('f_setKey').value.trim();
+    const v = document.getElementById('f_setVal').value.trim();
+    if(!k || !v) return;
+    g.settings = g.settings || [];
+    g.settings.push({k,v});
+    saveData(); closeSheet(); render();
+  };
+}
+
+function openMenuSheet(){
+  openSheet(`
+    <h2>Menü</h2>
+    <div class="menu-item" id="pdfItem">
+      <div class="menu-icon">${iconPdf()}</div>
+      <div><div class="mi-title">Als PDF exportieren</div><div class="mi-sub">Übersicht mit Fotos zum Ausdrucken/Teilen</div></div>
+    </div>
+    <div class="menu-item" id="exportItem">
+      <div class="menu-icon">${iconDownload()}</div>
+      <div><div class="mi-title">Daten exportieren</div><div class="mi-sub">Datei erzeugen zum Sichern in OneDrive</div></div>
+    </div>
+    <div class="menu-item" id="importItem">
+      <div class="menu-icon">${iconUpload()}</div>
+      <div><div class="mi-title">Daten importieren</div><div class="mi-sub">Datei aus OneDrive/Dateien laden</div></div>
+    </div>
+    <div class="info-box">
+      <b>So kommt es nach OneDrive:</b> Tippe „Exportieren“ → im Teilen-Menü <b>„In Dateien sichern“</b> wählen → deinen OneDrive-Ordner auswählen. Auf einem anderen Gerät dann „Importieren“ und dieselbe Datei öffnen.
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-ghost" id="closeMenuBtn">Schließen</button>
+    </div>
+  `);
+  document.getElementById('closeMenuBtn').onclick = closeSheet;
+  document.getElementById('exportItem').onclick = doExport;
+  document.getElementById('pdfItem').onclick = doExportPDF;
+  document.getElementById('importItem').onclick = ()=>{
+    document.getElementById('importInput').click();
+  };
+}
+
+function currentMonthValue(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function doExportPDF(){
+  if(!window.jspdf){ alert('PDF-Funktion konnte nicht geladen werden. Prüfe deine Internetverbindung und versuch es erneut.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const pageW = 210, marginX = 16;
+  let y = 20;
+
+  function ensureSpace(h){
+    if(y + h > 285){ doc.addPage(); y = 20; }
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.text('Trainings-Log', marginX, y);
+  y += 7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120);
+  doc.text('Exportiert am ' + new Date().toLocaleDateString('de-DE'), marginX, y);
+  doc.setTextColor(20);
+  y += 10;
+
+  state.data.categories.forEach(cat=>{
+    ensureSpace(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text(cat.name, marginX, y);
+    y += 7;
+    doc.setDrawColor(210); doc.line(marginX, y-4, pageW-marginX, y-4);
+
+    if(cat.geraete.length===0){
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(140);
+      doc.text('Keine Geräte.', marginX, y); doc.setTextColor(20);
+      y += 8;
+    }
+
+    cat.geraete.forEach(g=>{
+      const entries = sortedEntries(g);
+      const photoH = g.photo ? 26 : 0;
+      ensureSpace(14 + photoH);
+
+      if(g.photo){
+        try{ doc.addImage(g.photo, 'JPEG', marginX, y, 26, 26, undefined, 'FAST'); }catch(e){}
+      }
+      const textX = g.photo ? marginX + 32 : marginX;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(12);
+      doc.text(g.name, textX, y + 5);
+
+      if(g.settings && g.settings.length){
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(120);
+        doc.text(g.settings.map(s=>`${s.k}: ${s.v}`).join('   '), textX, y + 10);
+        doc.setTextColor(20);
+      }
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      let ly = y + (g.settings && g.settings.length ? 15 : 11);
+      if(entries.length===0){
+        doc.setTextColor(140);
+        doc.text('Keine Einträge.', textX, ly);
+        doc.setTextColor(20);
+        ly += 5;
+      } else {
+        entries.forEach(e=>{
+          const line = `${fmtDate(e.date)}   ${e.weight} kg` + (e.note ? `   – ${e.note}` : '');
+          doc.text(line, textX, ly);
+          ly += 5;
+        });
+      }
+      y = Math.max(ly, y + photoH + 4) + 3;
+    });
+    y += 4;
+  });
+
+  doc.save(`trainings-log-${new Date().toISOString().slice(0,10)}.pdf`);
+  closeSheet();
+}
+
+/* ---------- Export / Import ---------- */
+function doExport(){
+  const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `training-export-${today}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  closeSheet();
+}
+
+document.getElementById('importInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!parsed.categories) throw new Error('invalid');
+      if(confirm('Aktuelle Daten durch die importierte Datei ersetzen?')){
+        state.data = parsed;
+        saveData(); closeSheet(); go('home');
+      }
+    }catch(err){
+      alert('Diese Datei konnte nicht gelesen werden.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ---------- Event-Delegation ---------- */
+function attachGlobalHandlers(){
+  const scrim = document.getElementById('scrim');
+  if(scrim){
+    scrim.addEventListener('click', (e)=>{ if(e.target===scrim) closeSheet(); });
+  }
+  const startBtn = document.getElementById('startTrainingBtn');
+  if(startBtn) startBtn.onclick = ()=> go('home');
+
+  const backBtn = document.getElementById('backBtn');
+  if(backBtn){
+    backBtn.onclick = ()=>{
+      if(state.view.name==='ger') go('cat', state.view.catId);
+      else go('home');
+    };
+  }
+  const menuBtn = document.getElementById('menuBtn');
+  if(menuBtn) menuBtn.onclick = openMenuSheet;
+
+  const searchBtn = document.getElementById('searchBtn');
+  if(searchBtn){
+    searchBtn.onclick = ()=>{
+      state.search.open = true; state.search.query='';
+      render();
+      const input = document.getElementById('searchInput');
+      if(input) input.focus();
+    };
+  }
+  const searchCloseBtn = document.getElementById('searchCloseBtn');
+  if(searchCloseBtn){
+    searchCloseBtn.onclick = ()=>{
+      state.search.open = false; state.search.query='';
+      render();
+    };
+  }
+  const searchInput = document.getElementById('searchInput');
+  if(searchInput){
+    searchInput.addEventListener('input', ()=>{
+      state.search.query = searchInput.value;
+      const resultsEl = document.getElementById('searchResults');
+      resultsEl.innerHTML = renderSearchResults(state.search.query);
+      attachSearchResultHandlers();
+    });
+    attachSearchResultHandlers();
+  }
+
+  const fab = document.getElementById('fabBtn');
+  if(fab){
+    fab.onclick = ()=>{
+      if(state.view.name==='home') openAddCategorySheet();
+      else if(state.view.name==='cat') openAddGeraetSheet(findCat(state.view.catId));
+      else if(state.view.name==='ger') openAddEntrySheet(findCat(state.view.catId), findGer(findCat(state.view.catId), state.view.gerId));
+    };
+  }
+
+  document.querySelectorAll('[data-cat]').forEach(el=>{
+    if(el.dataset.ger) return;
+    el.addEventListener('click', ()=> go('cat', el.dataset.cat));
+  });
+  document.querySelectorAll('.ger-tile[data-ger]').forEach(el=>{
+    el.addEventListener('click', ()=> go('ger', el.dataset.cat, el.dataset.ger));
+  });
+  document.querySelectorAll('.ger-head[data-ger]').forEach(el=>{
+    el.addEventListener('click', ()=> go('ger', el.dataset.cat, el.dataset.ger));
+  });
+
+  const editCatBtn = document.getElementById('editCatBtn');
+  if(editCatBtn) editCatBtn.onclick = ()=> openEditCategorySheet(findCat(state.view.catId));
+
+  const editGerBtn = document.getElementById('editGerBtn');
+  if(editGerBtn) editGerBtn.onclick = ()=>{
+    const cat = findCat(state.view.catId);
+    openEditGeraetSheet(cat, findGer(cat, state.view.gerId));
+  };
+
+  const addSettingBtn = document.getElementById('addSettingBtn');
+  if(addSettingBtn){
+    addSettingBtn.onclick = ()=>{
+      const cat = findCat(state.view.catId);
+      openAddSettingSheet(findGer(cat, state.view.gerId));
+    };
+  }
+  document.querySelectorAll('[data-delset]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const cat = findCat(state.view.catId);
+      const g = findGer(cat, state.view.gerId);
+      g.settings = g.settings.filter(s=>s.k!==el.dataset.delset);
+      saveData(); render();
+    });
+  });
+  document.querySelectorAll('[data-delentry]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const cat = findCat(state.view.catId);
+      const g = findGer(cat, state.view.gerId);
+      if(confirm('Eintrag löschen?')){
+        g.entries = g.entries.filter(en=>en.id!==el.dataset.delentry);
+        saveData(); render();
+      }
+    });
+  });
+}
+
+const PLAN_IMPORT = {
+  categories: [
+    { name:'Schultern', color:'blue', geraete:[
+      {name:'Gerät 18', settings:[], entries:[{date:'2026-02', weight:20, note:'Sätze 15/20/20 kg – aus Trainingsplan'}]},
+      {name:'Gerät 19', settings:[], entries:[{date:'2026-02', weight:10, note:'Sätze 5/10/10 kg – aus Trainingsplan'}]},
+      {name:'Gerät 14', settings:[], entries:[{date:'2026-02', weight:10, note:'Sätze 10/5/5 kg – aus Trainingsplan'}]},
+    ]},
+    { name:'Trizeps', color:'yellow', geraete:[
+      {name:'Gerät 28', settings:[], entries:[{date:'2026-02', weight:5, note:'Sätze 5/5/5 kg – aus Trainingsplan'}]},
+      {name:'Gerät 26', settings:[], entries:[{date:'2026-02', weight:15, note:'Sätze ca. 10/15/15 kg – bitte prüfen'}]},
+    ]},
+    { name:'Waden', color:'green', geraete:[
+      {name:'Gerät 2', settings:[], entries:[{date:'2026-02', weight:10, note:'Sätze 10/10/10 kg – aus Trainingsplan'}]},
+    ]},
+    { name:'Beine', color:'red', geraete:[
+      {name:'Gerät 1', settings:[], entries:[{date:'2026-02', weight:60, note:'Sätze 60/60/60 kg – aus Trainingsplan'}]},
+      {name:'Gerät 3', settings:[], entries:[{date:'2026-02', weight:20, note:'Sätze 10/20/10 kg – bitte prüfen'}]},
+      {name:'Gerät 12', settings:[], entries:[{date:'2026-02', weight:15, note:'Sätze 15/10/15 kg – aus Trainingsplan'}]},
+      {name:'Gerät 16', settings:[], entries:[{date:'2026-02', weight:60, note:'Sätze 60/25/25 kg – bitte prüfen'}]},
+      {name:'Gerät 20', settings:[], entries:[{date:'2026-02', weight:15, note:'Sätze 0/15/0 kg – bitte prüfen'}]},
+    ]},
+  ]
+};
+
+function mergePlanImport(){
+  if(localStorage.getItem('planImportV1Done')) return;
+  PLAN_IMPORT.categories.forEach(pc=>{
+    let cat = state.data.categories.find(c=>c.name.toLowerCase()===pc.name.toLowerCase());
+    if(!cat){
+      cat = { id: uid(), name: pc.name, color: pc.color, geraete: [] };
+      state.data.categories.push(cat);
+    }
+    pc.geraete.forEach(pg=>{
+      let ger = cat.geraete.find(g=>g.name.toLowerCase()===pg.name.toLowerCase());
+      if(!ger){
+        ger = { id: uid(), name: pg.name, settings:[], entries: [] };
+        cat.geraete.push(ger);
+      }
+      pg.entries.forEach(pe=>{
+        ger.entries.push({ id: uid(), date: pe.date, weight: pe.weight, note: pe.note });
+      });
+    });
+  });
+  saveData();
+  localStorage.setItem('planImportV1Done','1');
+}
+
+const PLAN_IMPORT_V2 = {
+  categories: [
+    { name:'Rücken', color:'white-plate', geraete:[
+      {name:'Gerät 32', settings:[], entries:[{date:'2026-02', weight:25, note:'Sätze ca. 15/20/25 kg – bitte prüfen'}]},
+      {name:'Gerät 31', settings:[], entries:[{date:'2026-02', weight:25, note:'Sätze ca. 20/20/25 kg – bitte prüfen'}]},
+      {name:'Gerät 23', settings:[], entries:[{date:'2026-02', weight:25, note:'Sätze ca. 15/20/25 kg – bitte prüfen'}]},
+      {name:'Gerät 37', settings:[], entries:[{date:'2026-02', weight:20, note:'Wert auf dem Foto unklar – bitte prüfen'}]},
+    ]},
+  ]
+};
+function mergePlanImportV2(){
+  if(localStorage.getItem('planImportV2Done')) return;
+  PLAN_IMPORT_V2.categories.forEach(pc=>{
+    let cat = state.data.categories.find(c=>c.name.toLowerCase()===pc.name.toLowerCase());
+    if(!cat){
+      cat = { id: uid(), name: pc.name, color: pc.color, geraete: [] };
+      state.data.categories.push(cat);
+    }
+    pc.geraete.forEach(pg=>{
+      let ger = cat.geraete.find(g=>g.name.toLowerCase()===pg.name.toLowerCase());
+      if(!ger){
+        ger = { id: uid(), name: pg.name, settings:[], entries: [] };
+        cat.geraete.push(ger);
+      }
+      pg.entries.forEach(pe=>{
+        ger.entries.push({ id: uid(), date: pe.date, weight: pe.weight, note: pe.note });
+      });
+    });
+  });
+  saveData();
+  localStorage.setItem('planImportV2Done','1');
+}
+
+mergePlanImport();
+mergePlanImportV2();
+render();
+window.addEventListener('resize', ()=>{ if(state.view.name==='ger') drawPlateChart(); });
+</script>
+</body>
+</html>
