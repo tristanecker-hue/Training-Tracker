@@ -295,7 +295,7 @@
 <input type="file" id="importInput" accept="application/json">
 
 <script>
-const APP_VERSION = '1.3.0'; // bei jedem Update erhöhen
+const APP_VERSION = '1.3.1'; // bei jedem Update erhöhen
 /* ---------- Daten ---------- */
 const STORAGE_KEY = 'trainingsTrackerData_v1';
 const PLATE_COLORS = ['white-plate','green','yellow','blue','red'];
@@ -582,7 +582,6 @@ function renderHome(){
         <div class="sub">${cats.length} Kategorien · ${totalGer} Geräte</div>
       </div>
       <div class="topbar-left">
-        <button class="iconbtn" id="toBodyBtn" aria-label="Körperansicht">${iconBody()}</button>
         <button class="iconbtn" id="searchBtn" aria-label="Gerät suchen">${iconSearch()}</button>
         <button class="iconbtn" id="menuBtn" aria-label="Menü">${iconMenu()}</button>
       </div>
@@ -1293,7 +1292,7 @@ function attachGlobalHandlers(){
     scrim.addEventListener('click', (e)=>{ if(e.target===scrim) closeSheet(); });
   }
   const startBtn = document.getElementById('startTrainingBtn');
-  if(startBtn) startBtn.onclick = ()=> go('body');
+  if(startBtn) startBtn.onclick = ()=> go('home');
 
   const toBodyBtn = document.getElementById('toBodyBtn');
   if(toBodyBtn) toBodyBtn.onclick = ()=> go('body');
